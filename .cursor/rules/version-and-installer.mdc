@@ -1,0 +1,15 @@
+---
+description: Bump version and rebuild installer after code changes
+alwaysApply: true
+---
+
+# Version bump + installer rebuild workflow
+
+When making **any code change** (JS/HTML/CSS, main/renderer/shared logic, IPC, installer config, etc.) that the user expects to be reflected in a new build:
+
+1. **Bump `package.json` version** (default: patch bump, e.g. `0.1.0 -> 0.1.1`).
+2. **Rebuild the Windows installer** by running `npm run build:win`.
+3. Ensure outputs are updated under `dist/` and reflect the new version in the filename/metadata.
+
+Do **not** bump versions for changes that are purely discussion-only and do not modify the project files.
+

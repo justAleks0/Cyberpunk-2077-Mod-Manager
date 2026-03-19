@@ -1,0 +1,63 @@
+{
+  "name": "cyberpunk-2077-mod-manager",
+  "version": "0.1.36",
+  "description": "Mod manager for Cyberpunk 2077",
+  "main": "src/main/main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "build:win": "node scripts/prepare-build.js && electron-builder --win"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1",
+    "png-to-ico": "^3.0.1"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.10",
+    "electron-store": "^8.1.0"
+  },
+  "build": {
+    "appId": "com.cp2077.modmanager",
+    "productName": "Cyberpunk 2077 Mod Manager",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "assets/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "Foundational Mods",
+        "to": "Foundational Mods",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "win": {
+      "icon": "assets/icon.ico",
+      "signAndEditExecutable": false,
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "include": "build/custom-installer.nsh",
+      "installerHeaderIcon": "assets/icon.ico",
+      "installerHeader": "assets/installerHeader.bmp",
+      "installerSidebar": "assets/installerSidebar.bmp",
+      "uninstallerSidebar": "assets/installerUnSidebar.bmp"
+    }
+  }
+}

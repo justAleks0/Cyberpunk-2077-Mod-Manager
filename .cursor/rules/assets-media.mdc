@@ -1,0 +1,14 @@
+---
+description: Check assets folder first when adding images, videos, or GIFs
+alwaysApply: true
+---
+
+# Media and assets workflow
+
+When the user asks to add an **image**, **video**, **GIF**, or similar media to the app (a screen, component, dialog, installer, etc.):
+
+1. **Check the `assets/` folder first** — list or read its contents and look for a related item by name, purpose, or type (e.g. icon, splash, logo, tutorial, banner).
+2. **If a suitable asset exists in `assets/`** — use it. Reference it from the code (e.g. relative to the app or via the path the build exposes).
+3. **Only suggest creating or sourcing a new asset** if nothing in `assets/` fits the request.
+
+Keep assets path consistent: e.g. `assets/` at project root for development; in a built Electron app they may be in `resources` or alongside the executable depending on packaging.

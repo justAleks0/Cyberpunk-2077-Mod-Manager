@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cyberpunk 2077 Mod Manager</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="loading-indicator" class="loading-indicator" aria-hidden="true">
+    <span class="loading-spinner"></span>
+    <span class="loading-text">Working…</span>
+  </div>
+  <div class="app">
+    <header class="header">
+      <img id="header-wordmark" class="header-wordmark" alt="Cyberpunk 2077 Mod Manager" />
+      <h1 class="header-title-fallback">Cyberpunk 2077 Mod Manager</h1>
+    </header>
+    <main class="main">
+      <section class="card" id="game-section">
+        <img id="game-wordmark" class="game-wordmark" alt="Cyberpunk 2077 Mod Manager" />
+        <h2><span class="section-chip" aria-hidden="true"></span>Game location</h2>
+        <p class="hint">Where Cyberpunk 2077 is installed. The manager uses this path to enable, disable, push, and uninstall mod files.</p>
+        <p class="status" id="game-status">Checking…</p>
+        <p class="path" id="game-path"></p>
+        <div class="actions">
+          <button type="button" id="btn-launch-game" disabled>Launch game</button>
+          <button type="button" id="btn-detect-game">Auto-detect</button>
+          <button type="button" id="btn-select-game">Select folder…</button>
+        </div>
+      </section>
+      <section class="card" id="mods-section">
+        <h2><span class="section-chip" aria-hidden="true"></span>Mods</h2>
+        <p class="hint">Install archives, manage active vs inactive mods, push current state to the game, or uninstall selected mods from this manager.</p>
+        <div class="actions" style="margin-bottom: 0.5rem;">
+          <button type="button" id="btn-push-mods" disabled>Push mods</button>
+          <button type="button" id="btn-install-file">Install from file…</button>
+          <button type="button" id="btn-install-foundational">Install foundational mods</button>
+          <button type="button" id="btn-reset-install">Reset install (backup mods)</button>
+          <button type="button" id="btn-check-download-folder">Check mods install folder</button>
+          <button type="button" id="btn-check-deps">Check all mod deps</button>
+        </div>
+        <p class="hint" id="mods-hint">No mods installed yet. Install mods from the Mods download folder or use Install from file.</p>
+        <p class="hint">Drag mods between Active and Inactive to toggle them.</p>
+        <div class="mods-board">
+          <div class="mods-column">
+            <h3>Active</h3>
+            <ul class="mod-list mod-list-column" id="mod-list-active"></ul>
+          </div>
+          <div class="mods-column">
+            <h3>Inactive</h3>
+            <ul class="mod-list mod-list-column" id="mod-list-inactive"></ul>
+          </div>
+        </div>
+      </section>
+      <section class="card" id="profiles-section">
+        <h2><span class="section-chip" aria-hidden="true"></span>Profiles</h2>
+        <p class="hint">Named presets of your mod setup. A profile saves enabled mods and archive load order so you can switch setups quickly.</p>
+        <div class="actions" style="margin-top: 0;">
+          <select id="profile-select"></select>
+          <button type="button" id="btn-profile-switch">Switch</button>
+          <button type="button" id="btn-profile-save">Save current</button>
+          <button type="button" id="btn-profile-create">Create…</button>
+          <button type="button" id="btn-profile-delete">Delete</button>
+        </div>
+        <p class="hint">Profiles include enabled mods and archive load order. Switching disables mods not in the profile.</p>
+      </section>
+      <section class="card" id="load-order-section">
+        <h2><span class="section-chip" aria-hidden="true"></span>Load order (archive mods)</h2>
+        <p class="hint">Order in which .archive mods load. Drag items to reorder, then click Apply to write modlist.txt.</p>
+        <ul class="load-order-list" id="load-order-list"></ul>
+        <div class="actions">
+          <button type="button" id="btn-refresh-load-order">Refresh</button>
+          <button type="button" id="btn-apply-load-order">Apply load order</button>
+        </div>
+      </section>
+      <section class="card" id="download-folder-section">
+        <h2><span class="section-chip" aria-hidden="true"></span>Mods download folder</h2>
+        <p class="hint">Folder to watch for newly downloaded archives (.zip/.7z/.rar). The manager can scan it and prompt you to install new mods.</p>
+        <p class="path" id="download-folder-path">Not set</p>
+        <div class="actions">
+          <button type="button" id="btn-set-download-folder">Set folder…</button>
+        </div>
+      </section>
+    </main>
+  </div>
+  <div id="mod-context-menu" class="context-menu" aria-hidden="true">
+    <button type="button" id="ctx-show-files-app">Show files (in app)</button>
+    <button type="button" id="ctx-show-files-explorer">Show files (in file explorer)</button>
+    <button type="button" id="ctx-uninstall-mod">Uninstall mod</button>
+  </div>
+  <div id="mod-files-modal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="mod-files-title">Mod files</h3>
+        <button type="button" id="mod-files-close" class="modal-close">Close</button>
+      </div>
+      <div id="mod-files-content" class="modal-content"></div>
+    </div>
+  </div>
+  <div id="deps-report-modal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Dependency check report</h3>
+        <button type="button" id="deps-report-close" class="modal-close">Close</button>
+      </div>
+      <div id="deps-report-content" class="modal-content"></div>
+    </div>
+  </div>
+  <script src="renderer.js"></script>
+</body>
+</html>
