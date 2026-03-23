@@ -11,14 +11,24 @@ A desktop mod manager for Cyberpunk 2077. Install, enable/disable, and manage lo
 - **Enable/disable** — Toggle mods on/off; the app tracks which files belong to each mod and moves them to a stash when disabled.
 - **Load order** — View and apply archive mod load order (writes `modlist.txt`).
 
-## Run from source
+## Install (recommended)
 
-1. `npm install`
-2. `npm start`
+Use the Windows installer as the main way to install and run the app:
+
+1. Download `Cyberpunk 2077 Mod Manager Setup <version>.exe` from `dist/` (or your release page).
+2. Run the installer and choose an install location.
+3. Launch the app from Start Menu / desktop shortcut.
+
+The installer includes bundled `Foundational Mods` resources and keeps app data across updates.
 
 ## Build installer
 
-- `npm run build` or `npm run build:win` — Builds the app and a Windows installer (NSIS) that lets you choose the install location. The `Foundational Mods` folder is included in the install.
+- `npm run build:win` — Builds the app and a Windows installer (NSIS) that lets you choose the install location.
+
+## Run from source (dev)
+
+1. `npm install`
+2. `npm start`
 
 ## Project layout
 

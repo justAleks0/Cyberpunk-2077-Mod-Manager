@@ -25,6 +25,7 @@ function getStashPath(modId) {
  * @property {boolean} enabled
  * @property {number} installedAt
  * @property {string[]} files - paths relative to game root
+ * @property {string[]} [disabledFiles] - paths to skip when enabling (for conflict resolution)
  * @property {string} [sourceArchiveName]
  */
 
@@ -82,11 +83,62 @@ function removeRecord(id) {
 }
 
 /**
+ * Find info.json path in mod files (REDmod convention).
+ * @param {string[]} files
+ * @returns {string|null}
+ */
+function findRedmodInfoRelPath(files) {
+  return (files || []).find((f) => f.toLowerCase().startsWith('mods/') && f.toLowerCase().endsWith('/info.json')) || null;
+}
+
+/**
+ * Strip Nexus-style suffix from filename (e.g. -3850-3-1-5-1760299171).
+ * @param {string} s
+ * @returns {string}
+ */
+function cleanNexusSuffix(s) {
+  if (!s || typeof s !== 'string') return s;
+  return s.replace(/-\d+(-\d+){3,}$/, '').trim() || s;
+}
+
+/**
+ * Resolve display name from info.json when available (for already-installed mods).
+ * Falls back to cleaning Nexus-style suffixes from filename when no metadata found.
+ * @param {ModRecord} mod
+ * @param {string} gameRoot
+ * @returns {string}
+ */
+function resolveDisplayName(mod, gameRoot) {
+  const relInfo = findRedmodInfoRelPath(mod.files);
+  if (relInfo) {
+    const basePath = mod.enabled ? gameRoot : getStashPath(mod.id);
+    const infoPath = path.join(basePath, relInfo);
+    if (fs.existsSync(infoPath)) {
+      try {
+        const data = JSON.parse(fs.readFileSync(infoPath, 'utf8'));
+        const name = data.name || data.friendlyName;
+        if (name && typeof name === 'string' && name.trim()) return name.trim();
+      } catch (_) {}
+    }
+  }
+  const current = mod.displayName || '';
+  if (current && /-\d+(-\d+){3,}$/.test(current)) {
+    return cleanNexusSuffix(current) || cleanNexusSuffix(path.basename(mod.sourceArchiveName || '', path.extname(mod.sourceArchiveName || ''))) || current;
+  }
+  return current || mod.id;
+}
+
+/**
  * @param {string} gameRoot - absolute path to game root
  * @returns {ModRecord[]}
  */
 function getMods(gameRoot) {
-  return loadRecords();
+  const records = loadRecords();
+  if (!gameRoot) return records;
+  return records.map((r) => ({
+    ...r,
+    displayName: resolveDisplayName(r, gameRoot),
+  }));
 }
 
 /**
@@ -145,8 +197,10 @@ function enableMod(modId, gameRoot) {
     return { ok: true };
   }
 
+  const disabled = new Set((mod.disabledFiles || []).map((p) => p.replace(/\\/g, '/').toLowerCase()));
   try {
     for (const rel of mod.files) {
+      if (disabled.has(rel.replace(/\\/g, '/').toLowerCase())) continue;
       const stashFile = path.join(stashBase, rel);
       const gameFile = path.join(gameRoot, rel);
       if (fs.existsSync(stashFile)) {
@@ -206,16 +260,21 @@ function uninstallMod(modId, gameRoot) {
   if (!mod) return { ok: false, error: 'Mod not found' };
 
   const modStashRoot = getStashPath(modId);
-  const baseRoot = mod.enabled ? gameRoot : modStashRoot;
   let removed = 0;
 
   try {
     for (const rel of mod.files || []) {
-      const filePath = path.join(baseRoot, rel);
-      if (fs.existsSync(filePath)) {
-        fs.rmSync(filePath, { recursive: true, force: true });
+      const gamePath = path.join(gameRoot, rel);
+      const stashPath = path.join(modStashRoot, rel);
+      if (fs.existsSync(gamePath)) {
+        fs.rmSync(gamePath, { recursive: true, force: true });
         removed += 1;
-        removeEmptyParents(path.dirname(filePath), baseRoot);
+        removeEmptyParents(path.dirname(gamePath), gameRoot);
+      }
+      if (fs.existsSync(stashPath)) {
+        fs.rmSync(stashPath, { recursive: true, force: true });
+        removed += 1;
+        removeEmptyParents(path.dirname(stashPath), modStashRoot);
       }
     }
 
@@ -244,6 +303,120 @@ function isAlreadyInstalled(archiveFileName) {
   );
 }
 
+/**
+ * Dump all mod files into a destination folder, preserving folder structure
+ * (archive/, bin/, r6/, red4ext/, mods/ etc.). Copies from game root for enabled
+ * mods and from stash for disabled mods. May overwrite existing files.
+ * @param {string} gameRoot
+ * @param {string} destFolder
+ * @returns {{ ok: boolean, filesCopied?: number, error?: string }}
+ */
+function dumpAllModsToFolder(gameRoot, destFolder) {
+  const records = loadRecords();
+  if (!gameRoot || !fs.existsSync(gameRoot)) {
+    return { ok: false, error: 'Game path not set or invalid.' };
+  }
+  try {
+    fs.mkdirSync(destFolder, { recursive: true });
+  } catch (err) {
+    return { ok: false, error: err.message || 'Could not create destination folder.' };
+  }
+  let filesCopied = 0;
+  for (const mod of records) {
+    const basePath = mod.enabled ? gameRoot : getStashPath(mod.id);
+    if (!fs.existsSync(basePath)) continue;
+    const disabled = new Set((mod.disabledFiles || []).map((p) => p.replace(/\\/g, '/').toLowerCase()));
+    for (const rel of mod.files || []) {
+      if (disabled.has(rel.replace(/\\/g, '/').toLowerCase())) continue;
+      const src = path.join(basePath, rel);
+      const dest = path.join(destFolder, rel);
+      if (!fs.existsSync(src)) continue;
+      try {
+        const stat = fs.statSync(src);
+        fs.mkdirSync(path.dirname(dest), { recursive: true });
+        if (stat.isDirectory()) {
+          fs.cpSync(src, dest, { recursive: true, force: true });
+          filesCopied += 1;
+        } else {
+          fs.copyFileSync(src, dest);
+          filesCopied += 1;
+        }
+      } catch (err) {
+        return { ok: false, error: `Failed copying ${rel}: ${err.message}`, filesCopied };
+      }
+    }
+  }
+  return { ok: true, filesCopied };
+}
+
+/**
+ * Sanitize a string for use as a folder name (remove invalid path chars).
+ * @param {string} s
+ * @returns {string}
+ */
+function sanitizeFolderName(s) {
+  if (!s || typeof s !== 'string') return 'mod';
+  return s.replace(/[\\/:*?"<>|]/g, '_').replace(/\s+/g, ' ').trim() || 'mod';
+}
+
+/**
+ * Extract each mod into its own named subfolder. Each mod gets destFolder/ModName/
+ * containing its full structure (archive/, bin/, r6/, red4ext/, mods/ etc.).
+ * @param {string} gameRoot
+ * @param {string} destFolder
+ * @returns {{ ok: boolean, modsExtracted?: number, filesCopied?: number, error?: string }}
+ */
+function extractModsToSeparateFolders(gameRoot, destFolder) {
+  const records = loadRecords();
+  if (!gameRoot || !fs.existsSync(gameRoot)) {
+    return { ok: false, error: 'Game path not set or invalid.' };
+  }
+  const mods = getMods(gameRoot);
+  try {
+    fs.mkdirSync(destFolder, { recursive: true });
+  } catch (err) {
+    return { ok: false, error: err.message || 'Could not create destination folder.' };
+  }
+  const seenNames = new Map();
+  let modsExtracted = 0;
+  let filesCopied = 0;
+  for (const mod of mods) {
+    const basePath = mod.enabled ? gameRoot : getStashPath(mod.id);
+    if (!fs.existsSync(basePath)) continue;
+    let folderName = sanitizeFolderName(mod.displayName || mod.id);
+    if (seenNames.has(folderName)) {
+      let n = 1;
+      while (seenNames.has(`${folderName} (${n})`)) n += 1;
+      folderName = `${folderName} (${n})`;
+    }
+    seenNames.set(folderName, true);
+    const modDest = path.join(destFolder, folderName);
+    fs.mkdirSync(modDest, { recursive: true });
+    const disabled = new Set((mod.disabledFiles || []).map((p) => p.replace(/\\/g, '/').toLowerCase()));
+    for (const rel of mod.files || []) {
+      if (disabled.has(rel.replace(/\\/g, '/').toLowerCase())) continue;
+      const src = path.join(basePath, rel);
+      const dest = path.join(modDest, rel);
+      if (!fs.existsSync(src)) continue;
+      try {
+        const stat = fs.statSync(src);
+        fs.mkdirSync(path.dirname(dest), { recursive: true });
+        if (stat.isDirectory()) {
+          fs.cpSync(src, dest, { recursive: true, force: true });
+          filesCopied += 1;
+        } else {
+          fs.copyFileSync(src, dest);
+          filesCopied += 1;
+        }
+      } catch (err) {
+        return { ok: false, error: `Failed copying ${rel} (${mod.displayName || mod.id}): ${err.message}`, modsExtracted, filesCopied };
+      }
+    }
+    modsExtracted += 1;
+  }
+  return { ok: true, modsExtracted, filesCopied };
+}
+
 module.exports = {
   loadRecords,
   saveRecords,
@@ -256,4 +429,6 @@ module.exports = {
   isAlreadyInstalled,
   getStashBase,
   getStashPath,
+  dumpAllModsToFolder,
+  extractModsToSeparateFolders,
 };

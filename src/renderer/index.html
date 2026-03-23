@@ -7,87 +7,247 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <div id="bg-artwork" class="bg-artwork" aria-hidden="true"></div>
   <div id="loading-indicator" class="loading-indicator" aria-hidden="true">
     <span class="loading-spinner"></span>
-    <span class="loading-text">Working…</span>
+    <div class="loading-content">
+      <span class="loading-text">Working…</span>
+      <span class="loading-step" id="loading-step" aria-hidden="true"></span>
+      <div class="loading-progress-wrap" id="loading-progress-wrap" aria-hidden="true">
+        <div class="loading-progress-bar"><div class="loading-progress-fill" id="loading-progress-fill"></div></div>
+      </div>
+    </div>
+  </div>
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+  <div id="confirm-modal" class="modal-backdrop confirm-modal" aria-hidden="true">
+    <div class="modal-card confirm-modal-card">
+      <p id="confirm-message" class="confirm-message"></p>
+      <div class="confirm-actions">
+        <button type="button" id="confirm-cancel" class="confirm-btn confirm-cancel">Cancel</button>
+        <button type="button" id="confirm-ok" class="confirm-btn confirm-ok">OK</button>
+      </div>
+    </div>
   </div>
   <div class="app">
     <header class="header">
       <img id="header-wordmark" class="header-wordmark" alt="Cyberpunk 2077 Mod Manager" />
       <h1 class="header-title-fallback">Cyberpunk 2077 Mod Manager</h1>
     </header>
-    <main class="main">
-      <section class="card" id="game-section">
-        <img id="game-wordmark" class="game-wordmark" alt="Cyberpunk 2077 Mod Manager" />
-        <h2><span class="section-chip" aria-hidden="true"></span>Game location</h2>
-        <p class="hint">Where Cyberpunk 2077 is installed. The manager uses this path to enable, disable, push, and uninstall mod files.</p>
-        <p class="status" id="game-status">Checking…</p>
-        <p class="path" id="game-path"></p>
-        <div class="actions">
-          <button type="button" id="btn-launch-game" disabled>Launch game</button>
-          <button type="button" id="btn-detect-game">Auto-detect</button>
-          <button type="button" id="btn-select-game">Select folder…</button>
-        </div>
-      </section>
-      <section class="card" id="mods-section">
-        <h2><span class="section-chip" aria-hidden="true"></span>Mods</h2>
-        <p class="hint">Install archives, manage active vs inactive mods, push current state to the game, or uninstall selected mods from this manager.</p>
-        <div class="actions" style="margin-bottom: 0.5rem;">
-          <button type="button" id="btn-push-mods" disabled>Push mods</button>
-          <button type="button" id="btn-install-file">Install from file…</button>
-          <button type="button" id="btn-install-foundational">Install foundational mods</button>
-          <button type="button" id="btn-reset-install">Reset install (backup mods)</button>
-          <button type="button" id="btn-check-download-folder">Check mods install folder</button>
-          <button type="button" id="btn-check-deps">Check all mod deps</button>
-        </div>
-        <p class="hint" id="mods-hint">No mods installed yet. Install mods from the Mods download folder or use Install from file.</p>
-        <p class="hint">Drag mods between Active and Inactive to toggle them.</p>
-        <div class="mods-board">
-          <div class="mods-column">
-            <h3>Active</h3>
-            <ul class="mod-list mod-list-column" id="mod-list-active"></ul>
+    <div class="fluffy-layout">
+      <aside class="left-panel" id="left-panel">
+        <div class="left-panel-placeholder" id="left-panel-placeholder">Select a mod</div>
+        <div class="left-panel-content" id="left-panel-content" aria-hidden="true">
+          <div class="mod-detail-header">
+            <h3 class="mod-detail-name" id="mod-detail-name"></h3>
+            <span class="mod-detail-type" id="mod-detail-type"></span>
           </div>
-          <div class="mods-column">
-            <h3>Inactive</h3>
-            <ul class="mod-list mod-list-column" id="mod-list-inactive"></ul>
+          <div class="mod-detail-preview" id="mod-detail-preview"></div>
+          <div class="mod-detail-meta" id="mod-detail-meta"></div>
+          <p class="mod-detail-desc" id="mod-detail-desc"></p>
+          <div class="mod-detail-children" id="mod-detail-children" aria-hidden="true">
+            <h4 class="mod-detail-children-title">Installed add-ons/children</h4>
+            <ul class="mod-detail-children-list" id="mod-detail-children-list"></ul>
+          </div>
+          <div class="mod-detail-actions">
+            <button type="button" id="btn-detail-edit">Edit…</button>
+            <button type="button" id="btn-detail-uninstall">Uninstall</button>
+          </div>
+          <div class="mod-detail-gallery" id="mod-detail-gallery" aria-hidden="true"></div>
+        </div>
+        <div class="left-panel-downloads" id="left-panel-downloads" aria-hidden="true">
+          <h3 class="mod-detail-name" id="foundational-detail-name"></h3>
+          <p class="mod-detail-desc" id="foundational-detail-desc"></p>
+          <div class="foundational-detail-meta" id="foundational-detail-meta"></div>
+          <button type="button" id="btn-detail-install">Install</button>
+        </div>
+      </aside>
+      <main class="center-panel">
+        <div class="page active" id="page-mods">
+          <div class="mods-toolbar">
+            <div class="toolbar-group toolbar-group-primary">
+              <button type="button" id="btn-push-mods" disabled>Push mods</button>
+              <button type="button" id="btn-install-file">Install from file…</button>
+            </div>
+            <div class="toolbar-group toolbar-group-secondary">
+              <button type="button" id="btn-enable-all-mods">Enable all</button>
+              <button type="button" id="btn-disable-all-mods">Disable all</button>
+              <button type="button" id="btn-uninstall-all-mods" class="btn-dangerous">Uninstall all</button>
+              <button type="button" id="btn-check-download-folder">Check mods folder</button>
+              <button type="button" id="btn-manage-groups">Manage groups</button>
+              <button type="button" id="btn-check-deps">Check deps</button>
+              <button type="button" id="btn-check-conflicts">Check conflicts</button>
+              <button type="button" id="btn-dump-all-mods" class="btn-dangerous" title="Will take some time and may cause issues">Dump all mods…</button>
+              <button type="button" id="btn-extract-mods-separate" class="btn-dangerous" title="Will take some time and may cause issues">Extract mods (separate folders)…</button>
+              <button type="button" id="btn-reset-install">Reset install</button>
+            </div>
+            <div class="toolbar-group toolbar-group-ai">
+              <button type="button" id="btn-ai-batch-categorize" class="btn-ai-feature" title="Requires OpenAI API key in Options. Shortcut: Ctrl+Shift+C">AI: Categorize</button>
+              <button type="button" id="btn-ai-troubleshoot" class="btn-ai-feature" title="Requires OpenAI API key in Options. Shortcut: Ctrl+Shift+T">AI: Troubleshoot</button>
+            </div>
+          </div>
+          <div class="mod-filters-bar" id="mod-filters-bar">
+            <input type="search" id="mod-filter-search" class="mod-filter-search" placeholder="Search mods…" aria-label="Search mods" />
+            <select id="mod-filter-status" class="mod-filter-select" aria-label="Filter by status">
+              <option value="">All</option>
+              <option value="enabled">Enabled</option>
+              <option value="disabled">Disabled</option>
+            </select>
+            <select id="mod-filter-category" class="mod-filter-select" aria-label="Filter by category">
+              <option value="">All categories</option>
+            </select>
+            <select id="mod-filter-source" class="mod-filter-select" aria-label="Filter by source">
+              <option value="">All</option>
+              <option value="nexus">Nexus</option>
+              <option value="manual">Manual</option>
+            </select>
+            <span class="mod-filter-sep">Sort:</span>
+            <select id="mod-sort" class="mod-filter-select" aria-label="Sort order">
+              <option value="name-asc">Name A–Z</option>
+              <option value="name-desc">Name Z–A</option>
+              <option value="date-desc">Newest first</option>
+              <option value="date-asc">Oldest first</option>
+              <option value="enabled-first">Enabled first</option>
+              <option value="disabled-first">Disabled first</option>
+            </select>
+          </div>
+          <p class="hint" id="mods-hint">No mods installed yet. Install from file or use the Downloads page for foundational mods.</p>
+          <div class="mod-list-wrap" id="mod-list-wrap">
+            <div id="mod-list-by-tag"></div>
           </div>
         </div>
-      </section>
-      <section class="card" id="profiles-section">
-        <h2><span class="section-chip" aria-hidden="true"></span>Profiles</h2>
-        <p class="hint">Named presets of your mod setup. A profile saves enabled mods and archive load order so you can switch setups quickly.</p>
-        <div class="actions" style="margin-top: 0;">
-          <select id="profile-select"></select>
-          <button type="button" id="btn-profile-switch">Switch</button>
-          <button type="button" id="btn-profile-save">Save current</button>
-          <button type="button" id="btn-profile-create">Create…</button>
-          <button type="button" id="btn-profile-delete">Delete</button>
+        <div class="page" id="page-presets">
+          <div class="presets-content">
+            <button type="button" id="btn-profile-create" class="btn-create-preset">Create new mod preset</button>
+            <div class="presets-form">
+              <select id="profile-select"></select>
+              <button type="button" id="btn-profile-switch">Switch</button>
+              <button type="button" id="btn-profile-save">Save current</button>
+              <button type="button" id="btn-profile-delete">Delete</button>
+            </div>
+          </div>
         </div>
-        <p class="hint">Profiles include enabled mods and archive load order. Switching disables mods not in the profile.</p>
-      </section>
-      <section class="card" id="load-order-section">
-        <h2><span class="section-chip" aria-hidden="true"></span>Load order (archive mods)</h2>
-        <p class="hint">Order in which .archive mods load. Drag items to reorder, then click Apply to write modlist.txt.</p>
-        <ul class="load-order-list" id="load-order-list"></ul>
-        <div class="actions">
-          <button type="button" id="btn-refresh-load-order">Refresh</button>
-          <button type="button" id="btn-apply-load-order">Apply load order</button>
+        <div class="page" id="page-downloads">
+          <div class="downloads-header">
+            <h2 class="downloads-section-title">Foundational mods</h2>
+            <button type="button" id="btn-install-all-foundational" class="btn-install-all">Install all</button>
+          </div>
+          <p class="hint downloads-footer">Framework mods required by many others. Place archives in the Foundational Mods folder to add more.</p>
+          <div class="foundational-list" id="foundational-list"></div>
         </div>
-      </section>
-      <section class="card" id="download-folder-section">
-        <h2><span class="section-chip" aria-hidden="true"></span>Mods download folder</h2>
-        <p class="hint">Folder to watch for newly downloaded archives (.zip/.7z/.rar). The manager can scan it and prompt you to install new mods.</p>
-        <p class="path" id="download-folder-path">Not set</p>
-        <div class="actions">
-          <button type="button" id="btn-set-download-folder">Set folder…</button>
+        <div class="page" id="page-nexus">
+          <div class="nexus-page-wrap">
+            <div class="nexus-header">
+              <p class="nexus-page-hint">Browse mods from Nexus Mods. Set your API key in Options to use the browse feature.</p>
+              <p class="nexus-rate-limit" id="nexus-rate-limit"></p>
+            </div>
+            <div class="nexus-tabs" id="nexus-tabs">
+              <button type="button" class="nexus-tab active" data-tab="latest_added">Latest Added</button>
+              <button type="button" class="nexus-tab" data-tab="latest_updated">Latest Updated</button>
+              <button type="button" class="nexus-tab" data-tab="trending">Trending</button>
+              <button type="button" class="nexus-tab" data-tab="tracked">Tracked</button>
+              <button type="button" class="nexus-tab" data-tab="updated_1d">Updated 1d</button>
+              <button type="button" class="nexus-tab" data-tab="updated_1w">Updated 1w</button>
+              <button type="button" class="nexus-tab" data-tab="updated_1m">Updated 1m</button>
+            </div>
+            <div class="nexus-content-area">
+              <div class="nexus-mod-grid" id="nexus-mod-grid"></div>
+              <div class="nexus-pagination" id="nexus-pagination" style="display:none">
+                <button type="button" class="nexus-pagination-prev" id="nexus-pagination-prev">Prev</button>
+                <span class="nexus-pagination-info" id="nexus-pagination-info">Page 1 of 1</span>
+                <button type="button" class="nexus-pagination-next" id="nexus-pagination-next">Next</button>
+              </div>
+              <div class="nexus-loading-overlay" id="nexus-loading" aria-hidden="true">
+                <span class="nexus-loading-spinner"></span>
+              </div>
+            </div>
+            <div class="nexus-error" id="nexus-error"></div>
+            <details class="nexus-webview-toggle">
+              <summary>Open Nexus Mods website (search, manual download)</summary>
+              <div class="nexus-webview-container">
+                <webview id="nexus-webview" src="https://www.nexusmods.com/cyberpunk2077/"></webview>
+              </div>
+            </details>
+          </div>
         </div>
-      </section>
-    </main>
+        <div class="page" id="page-options">
+          <div class="options-stack">
+            <button type="button" id="btn-archive-load-order" class="option-btn">Archive load order</button>
+            <button type="button" id="btn-define-game-path" class="option-btn">Define game install path</button>
+            <button type="button" id="btn-mods-download-folder" class="option-btn">Mods download folder</button>
+            <button type="button" id="btn-open-mods-folder" class="option-btn">Open mods folder</button>
+            <button type="button" id="btn-open-game-folder" class="option-btn">Open game folder</button>
+          </div>
+          <div class="options-sub" id="options-sub"></div>
+        </div>
+        <div class="page" id="page-ai">
+          <div class="ai-chat-layout">
+            <div class="ai-side-panel">
+              <div class="ai-activity-panel">
+                <h4 class="ai-panel-title">Activity</h4>
+                <div class="ai-activity-log" id="ai-activity-log"></div>
+              </div>
+              <details class="ai-debug-panel">
+                <summary>Debug</summary>
+                <div class="ai-debug-content" id="ai-debug-content"></div>
+              </details>
+            </div>
+            <div class="ai-chat-wrap">
+            <div class="ai-chat-messages" id="ai-chat-messages">
+              <div class="ai-chat-empty" id="ai-chat-empty">
+                <p class="ai-chat-greeting">What would you like help with?</p>
+                <div class="ai-quick-actions" id="ai-quick-actions">
+                  <button type="button" class="ai-quick-chip btn-ai-feature" data-task="categorize">Categorize uncategorized mods</button>
+                  <button type="button" class="ai-quick-chip btn-ai-feature" data-task="troubleshoot">Troubleshoot issues</button>
+                  <button type="button" class="ai-quick-chip btn-ai-feature" data-task="suggest-groups">Suggest mod groups</button>
+                  <button type="button" class="ai-quick-chip btn-ai-feature" data-task="suggest-load-order">Suggest load order</button>
+                </div>
+              </div>
+            </div>
+            <div class="ai-chat-input-wrap">
+              <input type="text" id="ai-chat-input" class="ai-chat-input" placeholder="Describe what you need (e.g. suggest groups by file name, troubleshoot a crash, categorize mods)…" autocomplete="off" />
+              <button type="button" id="ai-chat-send" class="ai-chat-send" aria-label="Send">↑</button>
+            </div>
+          </div>
+          </div>
+        </div>
+        <div class="page" id="page-load-order">
+          <h2>Archive load order</h2>
+          <p class="hint">Drag items to reorder, then Apply to write modlist.txt.</p>
+          <ul class="load-order-list" id="load-order-list"></ul>
+          <div class="actions">
+            <button type="button" id="btn-refresh-load-order">Refresh</button>
+            <button type="button" id="btn-ai-suggest-load-order" class="btn-ai-feature" title="Requires OpenAI API key in Options">AI: Suggest order</button>
+            <button type="button" id="btn-apply-load-order">Apply load order</button>
+            <button type="button" id="btn-load-order-back">Back to Options</button>
+          </div>
+        </div>
+      </main>
+      <nav class="right-sidebar">
+        <button type="button" class="sidebar-btn active" data-page="mods">Mod list</button>
+        <button type="button" class="sidebar-btn" data-page="presets">Mod presets</button>
+        <button type="button" class="sidebar-btn" data-page="downloads">Downloads</button>
+        <button type="button" class="sidebar-btn" data-page="nexus">Nexus Mods</button>
+        <button type="button" class="sidebar-btn btn-ai-feature" data-page="ai">AI</button>
+        <button type="button" class="sidebar-btn" data-page="options">Options</button>
+        <button type="button" class="sidebar-btn sidebar-launch" id="btn-launch-game" disabled>Launch game</button>
+      </nav>
+    </div>
   </div>
   <div id="mod-context-menu" class="context-menu" aria-hidden="true">
+    <button type="button" id="ctx-edit-mod">Edit…</button>
+    <button type="button" id="ctx-add-to-group">Add to group…</button>
+    <button type="button" id="ctx-create-group">Create group from selected</button>
     <button type="button" id="ctx-show-files-app">Show files (in app)</button>
     <button type="button" id="ctx-show-files-explorer">Show files (in file explorer)</button>
     <button type="button" id="ctx-uninstall-mod">Uninstall mod</button>
+    <div id="ctx-child-addon-row" class="context-menu-child-row" aria-hidden="true">
+      <button type="button" id="ctx-add-to-child-name">Add to Child/add-on name</button>
+      <button type="button" id="ctx-add-to-child-desc">Add to Child/add-on description</button>
+    </div>
+    <hr class="context-menu-sep" />
+    <button type="button" id="ctx-ai-categorize" class="btn-ai-feature" title="Requires OpenAI API key in Options">AI: Categorize this mod</button>
+    <button type="button" id="ctx-ai-troubleshoot" class="btn-ai-feature" title="Requires OpenAI API key in Options">AI: Troubleshoot</button>
+    <button type="button" id="ctx-ai-generate" class="btn-ai-feature" title="Requires OpenAI API key in Options">AI: Generate description</button>
   </div>
   <div id="mod-files-modal" class="modal-backdrop" aria-hidden="true">
     <div class="modal-card">
@@ -98,6 +258,119 @@
       <div id="mod-files-content" class="modal-content"></div>
     </div>
   </div>
+  <div id="groups-modal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal-card groups-modal-card">
+      <div class="modal-header">
+        <h3>Mod groups</h3>
+        <button type="button" id="groups-modal-close" class="modal-close">Close</button>
+      </div>
+      <div class="groups-modal-body">
+        <div class="groups-suggest-section">
+          <button type="button" id="btn-suggest-groups">Auto-detect related mods</button>
+          <button type="button" id="btn-ai-suggest-groups" class="btn-ai-feature" title="Requires OpenAI API key in Options">AI suggest groups</button>
+          <div id="groups-suggest-results" class="groups-suggest-results"></div>
+        </div>
+        <div class="groups-list-section">
+          <h4>Your groups</h4>
+          <div id="groups-list" class="groups-list"></div>
+          <button type="button" id="btn-create-group" class="btn-create-group">Create new group</button>
+        </div>
+        <div class="groups-mass-edit-section" id="groups-mass-edit-section">
+          <h4>Mass edit selected group</h4>
+          <div class="groups-mass-edit-form" id="groups-mass-edit-form"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="conflict-modal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal-card conflict-modal-card">
+      <div class="modal-header">
+        <h3>Mod file conflict</h3>
+        <button type="button" id="conflict-modal-close" class="modal-close">Cancel</button>
+      </div>
+      <div class="conflict-modal-body">
+        <p class="conflict-desc" id="conflict-desc"></p>
+        <div class="conflict-files" id="conflict-files"></div>
+        <div class="conflict-options">
+          <p class="conflict-options-label">Choose how to resolve:</p>
+          <div class="conflict-options-safe" id="conflict-options-safe"></div>
+          <div class="conflict-options-risky">
+            <p class="conflict-risky-warn">Risky options — the manager has no responsibility for how well these function or if they break something:</p>
+            <div class="conflict-options-risky-btns" id="conflict-options-risky"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="nexus-mod-detail-modal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal-card nexus-mod-detail-modal-card">
+      <div class="modal-header">
+        <h3 id="nexus-mod-detail-title">Nexus Mod</h3>
+        <button type="button" id="nexus-mod-detail-close" class="modal-close">Close</button>
+      </div>
+      <div class="nexus-mod-detail-body">
+        <div class="nexus-mod-detail-loading" id="nexus-mod-detail-loading">Loading…</div>
+        <div class="nexus-mod-detail-content" id="nexus-mod-detail-content" style="display:none">
+          <div class="nexus-mod-detail-header">
+            <img id="nexus-mod-detail-thumb" class="nexus-mod-detail-thumb" alt="" />
+            <div class="nexus-mod-detail-meta">
+              <p id="nexus-mod-detail-summary" class="nexus-mod-detail-summary"></p>
+              <div class="nexus-mod-detail-actions">
+                <button type="button" id="nexus-mod-detail-link" class="nexus-btn nexus-link-btn">Open on Nexus</button>
+                <button type="button" id="nexus-mod-detail-endorse" class="nexus-btn">Endorse</button>
+                <button type="button" id="nexus-mod-detail-abstain" class="nexus-btn">Abstain</button>
+                <button type="button" id="nexus-mod-detail-track" class="nexus-btn">Track</button>
+                <button type="button" id="nexus-mod-detail-untrack" class="nexus-btn" style="display:none">Untrack</button>
+              </div>
+            </div>
+          </div>
+          <details class="nexus-mod-detail-files" id="nexus-mod-detail-files-wrap" open>
+            <summary>Files</summary>
+            <div id="nexus-mod-detail-files-list" class="nexus-mod-detail-files-list"></div>
+          </details>
+          <details class="nexus-mod-detail-changelog">
+            <summary>Changelog</summary>
+            <div id="nexus-mod-detail-changelog-content" class="nexus-mod-detail-changelog-content"></div>
+          </details>
+          <details class="nexus-mod-detail-webview-wrap" id="nexus-mod-detail-webview-wrap">
+            <summary>Nexus Mods website</summary>
+            <div class="nexus-mod-detail-webview-container">
+              <webview id="nexus-mod-detail-webview"></webview>
+            </div>
+          </details>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="ai-batch-categorize-modal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal-card ai-batch-modal-card">
+      <div class="modal-header">
+        <h3>AI: Categorize uncategorized mods</h3>
+        <button type="button" id="ai-batch-modal-close" class="modal-close">Close</button>
+      </div>
+      <div class="modal-content">
+        <p class="ai-batch-hint">Review suggestions. New categories are only added when you apply. Accept the suggestions you want, then click Apply accepted.</p>
+        <div id="ai-batch-suggestions-list" class="ai-batch-suggestions-list"></div>
+        <div class="ai-batch-actions">
+          <button type="button" id="ai-batch-apply-accepted">Apply accepted</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="ai-troubleshoot-modal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal-card ai-troubleshoot-modal-card">
+      <div class="modal-header">
+        <h3>AI: Troubleshooting assistant</h3>
+        <button type="button" id="ai-troubleshoot-modal-close" class="modal-close">Close</button>
+      </div>
+      <div class="modal-content">
+        <p class="ai-troubleshoot-hint">Describe your issue (e.g. game crashes on load, missing content, visual glitch). AI will suggest mods to try disabling.</p>
+        <textarea id="ai-troubleshoot-input" class="ai-troubleshoot-input" rows="4" placeholder="e.g. Game crashes when entering a vehicle..."></textarea>
+        <button type="button" id="ai-troubleshoot-ask">Ask</button>
+        <div id="ai-troubleshoot-response" class="ai-troubleshoot-response"></div>
+      </div>
+    </div>
+  </div>
   <div id="deps-report-modal" class="modal-backdrop" aria-hidden="true">
     <div class="modal-card">
       <div class="modal-header">
@@ -105,6 +378,95 @@
         <button type="button" id="deps-report-close" class="modal-close">Close</button>
       </div>
       <div id="deps-report-content" class="modal-content"></div>
+    </div>
+  </div>
+  <div id="install-result-modal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal-card install-result-card">
+      <div class="modal-header">
+        <h3 id="install-result-title">Installation results</h3>
+        <button type="button" id="install-result-close" class="modal-close">OK</button>
+      </div>
+      <div id="install-result-content" class="modal-content install-result-content"></div>
+    </div>
+  </div>
+  <div id="mod-edit-modal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal-card mod-edit-modal-card">
+      <div class="modal-header">
+        <h3 id="mod-edit-title">Edit mod</h3>
+        <button type="button" id="mod-edit-close" class="modal-close">Close</button>
+      </div>
+      <div class="mod-edit-body">
+        <div class="mod-edit-form">
+          <div class="mod-edit-nexus-row">
+            <p class="mod-edit-nexus-hint mod-edit-nexus-hint-promo">Found the right mod? Use the Nexus Mods API to grab its info and auto-fill name, description, and images. <a id="mod-edit-nexus-search" href="#">Search in browser</a> or enter Mod ID below:</p>
+            <button type="button" id="mod-edit-use-current-page" class="nexus-btn nexus-btn-use-page" title="Auto-fill from the mod page currently shown in the browser">Use this mod's info</button>
+            <div class="mod-edit-nexus-lookup">
+              <input type="text" id="mod-edit-nexus-id" placeholder="e.g. 3850" class="mod-edit-nexus-id-input" />
+              <button type="button" id="mod-edit-nexus-lookup-btn" class="nexus-btn">Look up</button>
+            </div>
+          </div>
+          <div class="mod-edit-field">
+            <label for="mod-edit-name">Custom name</label>
+            <div class="mod-edit-input-row">
+              <input type="text" id="mod-edit-name" placeholder="Display name" />
+              <button type="button" class="btn-paste" id="mod-edit-name-paste" title="Paste from clipboard">Paste</button>
+            </div>
+          </div>
+          <div class="mod-edit-field mod-edit-field-description">
+            <label for="mod-edit-description">Description</label>
+            <div class="mod-edit-input-row">
+              <textarea id="mod-edit-description" rows="4" placeholder="Optional description"></textarea>
+              <button type="button" class="btn-paste" id="mod-edit-description-paste" title="Paste from clipboard">Paste</button>
+              <button type="button" class="btn-paste mod-edit-ai-generate" id="mod-edit-ai-generate" title="Generate description, category, tags with AI">Generate with AI</button>
+            </div>
+          </div>
+          <div class="mod-edit-field">
+            <label for="mod-edit-category">Category</label>
+            <select id="mod-edit-category">
+              <option value="">Uncategorized</option>
+            </select>
+          </div>
+          <div class="mod-edit-field mod-edit-parent-row">
+            <label>Is this mod an add-on/child of another mod?</label>
+            <p class="mod-edit-parent-hint">Select the parent mod to link them. Similar names appear first.</p>
+            <input type="text" id="mod-edit-parent-search" class="mod-edit-parent-search" placeholder="Search parent mod…" aria-label="Search parent mod" />
+            <select id="mod-edit-parent-mod" class="mod-edit-parent-select" aria-label="Parent mod">
+              <option value="">— None —</option>
+            </select>
+          </div>
+          <div class="mod-edit-field mod-edit-child-fields" id="mod-edit-child-fields-wrap" aria-hidden="true">
+            <label for="mod-edit-child-addon-name">Child/add-on name</label>
+            <input type="text" id="mod-edit-child-addon-name" placeholder="e.g. Phantom Liberty" />
+            <label for="mod-edit-child-addon-desc">Child/add-on description</label>
+            <textarea id="mod-edit-child-addon-desc" rows="2" placeholder="Optional"></textarea>
+          </div>
+          <div class="mod-edit-field">
+            <label>Tags</label>
+            <div class="mod-edit-tags" id="mod-edit-tags-container"></div>
+            <input type="text" id="mod-edit-tag-input" placeholder="Add tag…" />
+          </div>
+          <div class="mod-edit-field">
+            <label>Images <span class="mod-edit-images-hint">(max 3, drag-and-drop, right-click in browser, or add by file/link)</span></label>
+            <div class="mod-edit-images-dropzone" id="mod-edit-images-dropzone">
+              <div class="mod-edit-images" id="mod-edit-images-container"></div>
+              <div class="mod-edit-images-buttons">
+                <button type="button" id="mod-edit-add-image">Add image…</button>
+                <button type="button" id="mod-edit-add-image-by-link">Add image by link…</button>
+              </div>
+            </div>
+          </div>
+          <div class="mod-edit-actions">
+            <button type="button" id="mod-edit-save">Save</button>
+            <button type="button" id="mod-edit-cancel">Cancel</button>
+          </div>
+        </div>
+        <div class="mod-edit-webview-wrap">
+          <div class="mod-edit-webview-search-row">
+            <input type="text" id="mod-edit-nexus-search-input" class="mod-edit-nexus-search-input" placeholder="Search Nexus Mods…" aria-label="Search Nexus Mods" />
+          </div>
+          <webview id="mod-edit-webview" src="about:blank"></webview>
+        </div>
+      </div>
     </div>
   </div>
   <script src="renderer.js"></script>

@@ -1,0 +1,16 @@
+{
+    "displayName" : "69.9 Your Station Name",
+    "fm" : 69.9,
+    "volume" : 1.0,
+    "icon" : "UIIcon.alcohol_absynth",
+    "customIcon": {
+        "inkAtlasPath": "path\\to\\custom\\atlas.inkatlas",
+        "inkAtlasPart": "custom_texture_part",
+        "useCustom": false
+    },
+    "streamInfo": {
+        "streamURL": "https://stream.antiradio.net/radio/8000/mp3",
+        "isStream": false
+    },
+    "order": []
+}
